@@ -1,0 +1,140 @@
+// Prisma schema for Media Portal PostgreSQL Database
+// Production schema for Vercel / Supabase / Neon / Cloud SQL deployments
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  BLOCKED
+}
+
+enum MediaType {
+  video
+  photo
+  poster
+  pdf
+  presentation
+  word
+  document
+}
+
+enum ReactionType {
+  LIKE
+  DISLIKE
+}
+
+enum LoginStatus {
+  SUCCESS
+  FAILED
+}
+
+model User {
+  id           String          @id @default(uuid())
+  name         String
+  email        String          @unique
+  passwordHash String
+  role         Role            @default(USER)
+  status       UserStatus      @default(ACTIVE)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  lastLoginAt  DateTime?
+
+  media        Media[]
+  comments     Comment[]
+  reactions    Reaction[]
+  loginLogs    LoginActivity[]
+
+  @@map("users")
+}
+
+model Media {
+  id             String      @id @default(uuid())
+  title          String
+  description    String      @db.Text
+  type           MediaType
+  fileUrl        String      @db.Text
+  thumbnailUrl   String      @db.Text
+  uploadedBy     String
+  user           User        @relation(fields: [uploadedBy], references: [id], onDelete: Cascade)
+  fileSize       String?
+  duration       String?
+  pageCount      Int?
+  slideCount     Int?
+  previewContent String?     @db.Text
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  comments       Comment[]
+  reactions      Reaction[]
+
+  @@map("media")
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  userId    String
+  mediaId   String
+  text      String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  media     Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@map("comments")
+}
+
+model Reaction {
+  id        String       @id @default(uuid())
+  userId    String
+  mediaId   String
+  type      ReactionType
+  createdAt DateTime     @default(now())
+
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  media     Media        @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, mediaId])
+  @@map("reactions")
+}
+
+model LoginActivity {
+  id         String      @id @default(uuid())
+  userId     String
+  userName   String
+  email      String
+  loginTime  DateTime    @default(now())
+  logoutTime DateTime?
+  status     LoginStatus
+  ipAddress  String?
+  userAgent  String?
+
+  user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("login_activities")
+}
+
+model AdminSettings {
+  id                String   @id @default("default")
+  adminUsername     String   @default("admin")
+  adminEmail        String   @default("admin@mediaportal.com")
+  portalName        String   @default("Media Portal")
+  maxUploadSizeMb   Int      @default(50)
+  allowRegistration Boolean  @default(true)
+  updatedAt         DateTime @updatedAt
+
+  @@map("admin_settings")
+}

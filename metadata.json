@@ -1,0 +1,6 @@
+{
+  "name": "Media Portal",
+  "description": "A modern, responsive full-stack media management and viewer portal with secure authentication, admin moderation, and media streaming.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
