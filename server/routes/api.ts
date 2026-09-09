@@ -604,7 +604,7 @@ router.put('/admin/users/:id', authenticateToken, requireAdmin, (req: AuthReques
 });
 
 // POST /api/admin/users/:id/reset-password
-router.post('/api/admin/users/:id/reset-password', authenticateToken, requireAdmin, async (req, res): Promise<void> => {
+router.post('/admin/users/:id/reset-password', authenticateToken, requireAdmin, async (req, res): Promise<void> => {
   try {
     const { id } = req.params;
     const { newPassword } = req.body;
@@ -630,7 +630,7 @@ router.post('/api/admin/users/:id/reset-password', authenticateToken, requireAdm
 });
 
 // POST /api/admin/users/:id/toggle-block
-router.post('/api/admin/users/:id/toggle-block', authenticateToken, requireAdmin, (req: AuthRequest, res): void => {
+router.post('/admin/users/:id/toggle-block', authenticateToken, requireAdmin, (req: AuthRequest, res): void => {
   const { id } = req.params;
 
   if (req.user?.id === id) {

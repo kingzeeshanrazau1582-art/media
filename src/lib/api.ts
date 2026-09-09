@@ -34,18 +34,32 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     headers.set('Authorization', `Bearer ${token}`);
   }
 
-  const res = await fetch(endpoint, {
-    ...options,
-    headers
-  });
+  try {
+    const res = await fetch(endpoint, {
+      ...options,
+      headers
+    });
 
-  const data = await res.json().catch(() => ({}));
+    const data = await res.json().catch(() => ({}));
 
-  if (!res.ok) {
-    throw new Error(data.error || `HTTP error ${res.status}`);
+    if (!res.ok) {
+      const errorMsg = data.error || data.message || (
+        res.status === 404 ? `Requested resource not found (${endpoint})` :
+        res.status === 401 ? 'Unauthorized: Please log in again.' :
+        res.status === 403 ? (data.error || 'Access forbidden: You do not have permission.') :
+        res.status === 500 ? (data.error || 'Internal server error. Please try again later.') :
+        `HTTP Error (${res.status})`
+      );
+      throw new Error(errorMsg);
+    }
+
+    return data as T;
+  } catch (err: any) {
+    if (err.name === 'TypeError' && err.message?.toLowerCase().includes('fetch')) {
+      throw new Error('Network connection error. Could not connect to the backend server.');
+    }
+    throw err;
   }
-
-  return data as T;
 }
 
 export const api = {

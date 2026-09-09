@@ -1,5 +1,5 @@
-// Prisma schema for Media Portal PostgreSQL Database
-// Production schema for Vercel / Supabase / Neon / Cloud SQL deployments
+// Prisma schema example for Media Portal PostgreSQL Database
+// Reference schema for optional future external PostgreSQL / Supabase deployments
 
 generator client {
   provider = "prisma-client-js"
