@@ -170,6 +170,12 @@ export const api = {
   getUsers: () =>
     request<{ users: User[] }>('/api/admin/users'),
 
+  createUser: (userData: { name: string; email: string; password: string; role?: string; status?: string }) =>
+    request<{ message: string; user: User }>('/api/admin/users', {
+      method: 'POST',
+      body: JSON.stringify(userData)
+    }),
+
   updateUser: (id: string, updates: Partial<User>) =>
     request<{ message: string; user: User }>(`/api/admin/users/${id}`, {
       method: 'PUT',

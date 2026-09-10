@@ -13,6 +13,7 @@ interface DatabaseSchema {
 }
 
 const SEED_FILE = path.join(process.cwd(), 'server', 'data.json');
+const BACKUP_FILE = path.join(process.cwd(), 'server', 'data.backup.json');
 // In Vercel serverless or AWS Lambda, the root deployment directory is read-only.
 // Use /tmp on Vercel so state writes succeed gracefully during serverless invocations.
 const DATA_FILE = process.env.VERCEL
@@ -342,16 +343,24 @@ class Database {
   private loadData(): DatabaseSchema {
     try {
       // In Vercel serverless functions, seed /tmp/mediaportal_data.json from bundled SEED_FILE if needed
-      if (process.env.VERCEL && !fs.existsSync(DATA_FILE) && fs.existsSync(SEED_FILE)) {
-        try {
-          const seedContent = fs.readFileSync(SEED_FILE, 'utf-8');
-          fs.writeFileSync(DATA_FILE, seedContent, 'utf-8');
-        } catch {
-          // ignore seeding fallback
+      if (process.env.VERCEL && !fs.existsSync(DATA_FILE)) {
+        if (fs.existsSync(SEED_FILE)) {
+          try {
+            const seedContent = fs.readFileSync(SEED_FILE, 'utf-8');
+            fs.writeFileSync(DATA_FILE, seedContent, 'utf-8');
+          } catch {}
+        } else if (fs.existsSync(BACKUP_FILE)) {
+          try {
+            const backupContent = fs.readFileSync(BACKUP_FILE, 'utf-8');
+            fs.writeFileSync(DATA_FILE, backupContent, 'utf-8');
+          } catch {}
         }
       }
 
-      const fileToRead = fs.existsSync(DATA_FILE) ? DATA_FILE : (fs.existsSync(SEED_FILE) ? SEED_FILE : null);
+      const fileToRead = fs.existsSync(DATA_FILE) 
+        ? DATA_FILE 
+        : (fs.existsSync(SEED_FILE) ? SEED_FILE : (fs.existsSync(BACKUP_FILE) ? BACKUP_FILE : null));
+
       if (fileToRead) {
         const raw = fs.readFileSync(fileToRead, 'utf-8');
         const parsed = JSON.parse(raw);
@@ -370,7 +379,7 @@ class Database {
           }
         }
 
-        return {
+        const loadedData: DatabaseSchema = {
           adminSettings: parsed.adminSettings || INITIAL_DATA.adminSettings,
           users: loadedUsers,
           media: parsed.media || INITIAL_DATA.media,
@@ -378,6 +387,10 @@ class Database {
           reactions: parsed.reactions || INITIAL_DATA.reactions,
           loginActivities: parsed.loginActivities || INITIAL_DATA.loginActivities
         };
+
+        // Ensure backup file is also in sync
+        this.saveData(loadedData);
+        return loadedData;
       }
     } catch (e) {
       console.warn('Could not read persistent DB file, using in-memory state', e);
@@ -388,11 +401,24 @@ class Database {
 
   private saveData(data: DatabaseSchema) {
     try {
+      const jsonContent = JSON.stringify(data, null, 2);
+
+      // Primary file write
       const dir = path.dirname(DATA_FILE);
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
       }
-      fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf-8');
+      fs.writeFileSync(DATA_FILE, jsonContent, 'utf-8');
+
+      // Secondary backup write (always kept updated for persistence)
+      if (DATA_FILE !== SEED_FILE && fs.existsSync(path.dirname(SEED_FILE))) {
+        try {
+          fs.writeFileSync(SEED_FILE, jsonContent, 'utf-8');
+        } catch {}
+      }
+      try {
+        fs.writeFileSync(BACKUP_FILE, jsonContent, 'utf-8');
+      } catch {}
     } catch (e) {
       console.warn('Could not write to persistent DB file', e);
     }

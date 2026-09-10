@@ -22,7 +22,8 @@ import {
   Sparkles,
   ShieldAlert,
   Loader2,
-  Copy
+  Copy,
+  UserPlus
 } from 'lucide-react';
 import { User, UserStatus, UserRole } from '../../types';
 import { api } from '../../lib/api';
@@ -37,12 +38,21 @@ export const AdminUserManager: React.FC<AdminUserManagerProps> = ({ onNotify }) 
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'BLOCKED'>('ALL');
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Modals
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [resettingUser, setResettingUser] = useState<User | null>(null);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [userToBlock, setUserToBlock] = useState<User | null>(null);
+  const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
+
+  // Create fields
+  const [createName, setCreateName] = useState('');
+  const [createEmail, setCreateEmail] = useState('');
+  const [createPassword, setCreatePassword] = useState('');
+  const [createRole, setCreateRole] = useState<UserRole>('USER');
+  const [createStatus, setCreateStatus] = useState<UserStatus>('ACTIVE');
 
   // Edit fields
   const [editName, setEditName] = useState('');
@@ -54,6 +64,13 @@ export const AdminUserManager: React.FC<AdminUserManagerProps> = ({ onNotify }) 
   const [newPassword, setNewPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  const copyToClipboard = (text: string, label = 'User ID') => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(text);
+    onNotify('Copied', `${label} (${text}) copied to clipboard`, 'success');
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
   const fetchUsers = async () => {
     try {
@@ -112,6 +129,39 @@ export const AdminUserManager: React.FC<AdminUserManagerProps> = ({ onNotify }) 
       fetchUsers();
     } catch (err: any) {
       onNotify('Update Failed', err.message, 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!createName.trim() || !createEmail.trim() || !createPassword.trim()) {
+      onNotify('Validation Error', 'Name, email, and password are required', 'error');
+      return;
+    }
+    if (createPassword.length < 6) {
+      onNotify('Password Error', 'Password must be at least 6 characters', 'error');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const res = await api.createUser({
+        name: createName,
+        email: createEmail,
+        password: createPassword,
+        role: createRole,
+        status: createStatus
+      });
+      onNotify('User ID Created', res.message || `Account created for ${createName}`, 'success');
+      setIsCreateUserOpen(false);
+      setCreateName('');
+      setCreateEmail('');
+      setCreatePassword('');
+      fetchUsers();
+    } catch (err: any) {
+      onNotify('Creation Failed', err.message, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -204,17 +254,35 @@ export const AdminUserManager: React.FC<AdminUserManagerProps> = ({ onNotify }) 
             User Accounts &amp; Access Control
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Administer accounts: change any user's password, block or unblock IDs, and delete users.
+            Administer accounts: Add new user IDs, change any user's password, block or unblock IDs, and delete users.
           </p>
         </div>
 
-        <button
-          onClick={fetchUsers}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 transition-colors self-start sm:self-auto cursor-pointer"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          <span>Refresh</span>
-        </button>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <button
+            id="admin-create-user-btn"
+            onClick={() => {
+              setCreateName('');
+              setCreateEmail('');
+              setCreatePassword('');
+              setCreateRole('USER');
+              setCreateStatus('ACTIVE');
+              setIsCreateUserOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-colors cursor-pointer"
+          >
+            <UserPlus className="w-3.5 h-3.5" />
+            <span>Add User ID</span>
+          </button>
+
+          <button
+            onClick={fetchUsers}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </button>
+        </div>
       </div>
 
       {/* Filter and Search Bar */}
@@ -226,7 +294,7 @@ export const AdminUserManager: React.FC<AdminUserManagerProps> = ({ onNotify }) 
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by ID, name, or email..."
+            placeholder="Search by User ID (usr_...), name, or email..."
             className="w-full pl-9.5 pr-3.5 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-slate-900 dark:text-white"
           />
         </div>
@@ -303,9 +371,19 @@ export const AdminUserManager: React.FC<AdminUserManagerProps> = ({ onNotify }) 
                             </p>
                             <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
                               <span>{user.email}</span>
-                              <span className="font-mono text-[10px] text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-1 rounded">
-                                ID: {user.id}
-                              </span>
+                              <button
+                                type="button"
+                                onClick={() => copyToClipboard(user.id)}
+                                title="Click to copy User ID"
+                                className="font-mono text-[10px] text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/80 px-1.5 py-0.5 rounded border border-indigo-200 dark:border-indigo-800 flex items-center gap-1 cursor-pointer transition-colors"
+                              >
+                                <span>ID: {user.id}</span>
+                                {copiedId === user.id ? (
+                                  <Check className="w-2.5 h-2.5 text-emerald-500" />
+                                ) : (
+                                  <Copy className="w-2.5 h-2.5" />
+                                )}
+                              </button>
                             </div>
                           </div>
                         </div>
@@ -550,14 +628,26 @@ export const AdminUserManager: React.FC<AdminUserManagerProps> = ({ onNotify }) 
                   <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                     New Password
                   </label>
-                  <button
-                    type="button"
-                    onClick={generateRandomPassword}
-                    className="inline-flex items-center gap-1 text-[11px] font-medium text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
-                  >
-                    <Sparkles className="w-3 h-3" />
-                    <span>Auto-generate password</span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {newPassword && (
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(newPassword, 'Password')}
+                        className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+                      >
+                        <Copy className="w-3 h-3" />
+                        <span>Copy Password</span>
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={generateRandomPassword}
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      <span>Auto-generate</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="relative">
@@ -572,7 +662,7 @@ export const AdminUserManager: React.FC<AdminUserManagerProps> = ({ onNotify }) 
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -587,7 +677,7 @@ export const AdminUserManager: React.FC<AdminUserManagerProps> = ({ onNotify }) 
                 <button
                   type="button"
                   onClick={() => setResettingUser(null)}
-                  className="px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 rounded-xl cursor-pointer"
+                  className="px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -598,6 +688,144 @@ export const AdminUserManager: React.FC<AdminUserManagerProps> = ({ onNotify }) 
                 >
                   {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                   <span>Save New Password</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CREATE NEW USER / ID MODAL */}
+      {isCreateUserOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-200 dark:border-indigo-800">
+                  <UserPlus className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    Create New User ID
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Add a new member account with custom login credentials.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsCreateUserOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateUser} className="space-y-3.5">
+              <div>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={createName}
+                  onChange={(e) => setCreateName(e.target.value)}
+                  placeholder="e.g. Zeeshan Raza"
+                  className="w-full px-3.5 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={createEmail}
+                  onChange={(e) => setCreateEmail(e.target.value)}
+                  placeholder="user@example.com"
+                  className="w-full px-3.5 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Initial Password
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%&*';
+                      let pwd = '';
+                      for (let i = 0; i < 10; i++) {
+                        pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+                      }
+                      setCreatePassword(pwd);
+                    }}
+                    className="inline-flex items-center gap-1 text-[11px] font-medium text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    <span>Auto-generate</span>
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  required
+                  value={createPassword}
+                  onChange={(e) => setCreatePassword(e.target.value)}
+                  placeholder="Minimum 6 characters"
+                  className="w-full px-3.5 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white font-mono"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                    Role
+                  </label>
+                  <select
+                    value={createRole}
+                    onChange={(e) => setCreateRole(e.target.value as UserRole)}
+                    className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white"
+                  >
+                    <option value="USER">Regular User</option>
+                    <option value="ADMIN">Administrator</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                    Initial Status
+                  </label>
+                  <select
+                    value={createStatus}
+                    onChange={(e) => setCreateStatus(e.target.value as UserStatus)}
+                    className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white"
+                  >
+                    <option value="ACTIVE">Active (Can Login)</option>
+                    <option value="BLOCKED">Blocked (Restricted)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateUserOpen(false)}
+                  className="px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-4 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer"
+                >
+                  {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />}
+                  <span>Create User ID</span>
                 </button>
               </div>
             </form>

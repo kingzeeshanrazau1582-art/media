@@ -93,14 +93,24 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Right Actions: Theme Toggle, Admin Dashboard Link, Profile */}
         <div className="flex items-center gap-2.5">
-          {/* Theme Toggle */}
+          {/* Sun / Night Mode Toggle */}
           <button
             id="theme-toggle-button"
             onClick={toggleTheme}
-            aria-label="Toggle theme mode"
-            className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
+            title={theme === 'dark' ? 'Switch to Sun Mode (Light)' : 'Switch to Night Mode (Dark)'}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-xs font-semibold"
           >
-            {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
+            {theme === 'dark' ? (
+              <>
+                <Sun className="w-4 h-4 text-amber-400" />
+                <span className="hidden md:inline">Sun Mode</span>
+              </>
+            ) : (
+              <>
+                <Moon className="w-4 h-4 text-indigo-600" />
+                <span className="hidden md:inline">Night Mode</span>
+              </>
+            )}
           </button>
 
           {/* If user is Admin, direct toggle to Admin Dashboard */}

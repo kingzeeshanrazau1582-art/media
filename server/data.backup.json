@@ -1,0 +1,345 @@
+{
+  "adminSettings": {
+    "id": "settings_1",
+    "adminUsername": "System Administrator",
+    "adminEmail": "admin@mediaportal.com",
+    "portalName": "Media Portal",
+    "maxUploadSizeMb": 50,
+    "allowRegistration": true,
+    "updatedAt": "2026-09-10T01:54:46.917Z"
+  },
+  "users": [
+    {
+      "id": "usr_admin_1",
+      "name": "System Administrator",
+      "email": "admin@mediaportal.com",
+      "passwordHash": "$2b$10$5LaYorOevJo/HvLL2k5FUemz0uWCeygewKuXmnRWkqu/YxfEv54Lm",
+      "role": "ADMIN",
+      "status": "ACTIVE",
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "updatedAt": "2026-09-10T01:54:46.917Z",
+      "lastLoginAt": "2026-09-10T01:53:06.059Z"
+    },
+    {
+      "id": "usr_user_1",
+      "name": "Sarah Connor",
+      "email": "sarah.connor@example.com",
+      "passwordHash": "$2b$10$wYuSbT3E.Skqrktw/LzRS.Wa7RDTi9KMhBca.pUGE9stoiPVvOc.W",
+      "role": "USER",
+      "status": "ACTIVE",
+      "createdAt": "2025-01-15T10:20:00.000Z",
+      "updatedAt": "2025-01-15T10:20:00.000Z",
+      "lastLoginAt": "2025-02-18T14:30:00.000Z"
+    },
+    {
+      "id": "usr_user_2",
+      "name": "Michael Scott",
+      "email": "michael.scott@example.com",
+      "passwordHash": "$2b$10$wYuSbT3E.Skqrktw/LzRS.Wa7RDTi9KMhBca.pUGE9stoiPVvOc.W",
+      "role": "USER",
+      "status": "ACTIVE",
+      "createdAt": "2025-01-20T09:15:00.000Z",
+      "updatedAt": "2025-01-20T09:15:00.000Z",
+      "lastLoginAt": "2025-02-20T11:45:00.000Z"
+    },
+    {
+      "id": "usr_user_3",
+      "name": "Elena Rostova",
+      "email": "elena.rostova@example.com",
+      "passwordHash": "$2b$10$wYuSbT3E.Skqrktw/LzRS.Wa7RDTi9KMhBca.pUGE9stoiPVvOc.W",
+      "role": "USER",
+      "status": "ACTIVE",
+      "createdAt": "2025-02-01T12:00:00.000Z",
+      "updatedAt": "2025-02-01T12:00:00.000Z",
+      "lastLoginAt": "2025-02-22T16:10:00.000Z"
+    }
+  ],
+  "media": [
+    {
+      "id": "med_vid_1",
+      "title": "Cinematic Nature & Wildlife 4K Reel",
+      "description": "An aerial and close-up cinematic compilation capturing the untamed wilderness, alpine lakes, and alpine wildlife in stunning clarity.",
+      "type": "video",
+      "fileUrl": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+      "thumbnailUrl": "https://images.unsplash.com/photo-1518495973542-4542c06a5843?w=800&auto=format&fit=crop&q=80",
+      "uploadedBy": "usr_admin_1",
+      "uploadedByName": "System Administrator",
+      "fileSize": "34.2 MB",
+      "duration": "09:56",
+      "createdAt": "2025-02-10T08:00:00.000Z",
+      "updatedAt": "2025-02-10T08:00:00.000Z"
+    },
+    {
+      "id": "med_vid_2",
+      "title": "Next-Gen Quantum Computing Explained",
+      "description": "Educational overview detailing qubit mechanics, cryo-cooling frameworks, and real-world cryptographic implications.",
+      "type": "video",
+      "fileUrl": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+      "thumbnailUrl": "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800&auto=format&fit=crop&q=80",
+      "uploadedBy": "usr_admin_1",
+      "uploadedByName": "System Administrator",
+      "fileSize": "48.1 MB",
+      "duration": "10:54",
+      "createdAt": "2025-02-12T14:30:00.000Z",
+      "updatedAt": "2025-02-12T14:30:00.000Z"
+    },
+    {
+      "id": "med_photo_1",
+      "title": "Neon Cyberpunk Metropolis at Twilight",
+      "description": "Ultra high-definition night photography of Shinjuku crossing with rain reflections, glowing neon signs, and atmospheric haze.",
+      "type": "photo",
+      "fileUrl": "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=1600&auto=format&fit=crop&q=85",
+      "thumbnailUrl": "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=800&auto=format&fit=crop&q=80",
+      "uploadedBy": "usr_admin_1",
+      "uploadedByName": "System Administrator",
+      "fileSize": "6.4 MB",
+      "createdAt": "2025-02-14T11:20:00.000Z",
+      "updatedAt": "2025-02-14T11:20:00.000Z"
+    },
+    {
+      "id": "med_photo_2",
+      "title": "Emerald Alpine Glacial Basin",
+      "description": "Crystal-clear high alpine lake surrounded by snow-capped peaks in the Canadian Rockies under morning sunlight.",
+      "type": "photo",
+      "fileUrl": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1600&auto=format&fit=crop&q=85",
+      "thumbnailUrl": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&auto=format&fit=crop&q=80",
+      "uploadedBy": "usr_admin_1",
+      "uploadedByName": "System Administrator",
+      "fileSize": "8.2 MB",
+      "createdAt": "2025-02-15T09:40:00.000Z",
+      "updatedAt": "2025-02-15T09:40:00.000Z"
+    },
+    {
+      "id": "med_poster_1",
+      "title": "Design Forward 2025 Festival Poster",
+      "description": "Official promotional poster for the annual International Modern Typography and Digital Design Symposium.",
+      "type": "poster",
+      "fileUrl": "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=1600&auto=format&fit=crop&q=85",
+      "thumbnailUrl": "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=800&auto=format&fit=crop&q=80",
+      "uploadedBy": "usr_admin_1",
+      "uploadedByName": "System Administrator",
+      "fileSize": "11.5 MB",
+      "createdAt": "2025-02-16T16:00:00.000Z",
+      "updatedAt": "2025-02-16T16:00:00.000Z"
+    },
+    {
+      "id": "med_poster_2",
+      "title": "Solar Odyssey: Deep Space Missions Poster",
+      "description": "Minimalist retro-futuristic vector poster celebrating deep space solar exploration missions and gravitational assist trajectories.",
+      "type": "poster",
+      "fileUrl": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1600&auto=format&fit=crop&q=85",
+      "thumbnailUrl": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80",
+      "uploadedBy": "usr_admin_1",
+      "uploadedByName": "System Administrator",
+      "fileSize": "9.1 MB",
+      "createdAt": "2025-02-17T13:10:00.000Z",
+      "updatedAt": "2025-02-17T13:10:00.000Z"
+    },
+    {
+      "id": "med_pdf_1",
+      "title": "Global Engineering Architecture Whitepaper.pdf",
+      "description": "Comprehensive technical whitepaper exploring cloud-native microservices, zero-trust security boundaries, and low-latency storage replication.",
+      "type": "pdf",
+      "fileUrl": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+      "thumbnailUrl": "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800&auto=format&fit=crop&q=80",
+      "uploadedBy": "usr_admin_1",
+      "uploadedByName": "System Administrator",
+      "fileSize": "4.8 MB",
+      "pageCount": 32,
+      "previewContent": "Section 1: Executive Summary\nCloud modernization requires balancing elasticity with observable SLAs. This whitepaper sets the foundational metrics for cross-region disaster recovery and continuous data integrity validation.\n\nSection 2: High Availability Topologies\n- Multi-master consensus clusters\n- Edge-cached static content deliveries\n- Zero-downtime database migration pipelines\n\nSection 3: Security & Governance Compliance\nAll ingress traffic is subjected to TLS 1.3 encryption, automatic JWT validation, and RBAC token evaluation at the gateway level.",
+      "createdAt": "2025-02-18T10:00:00.000Z",
+      "updatedAt": "2025-02-18T10:00:00.000Z"
+    },
+    {
+      "id": "med_pptx_1",
+      "title": "Q3 Enterprise Product Strategy & Roadmap.pptx",
+      "description": "Executive pitch deck outlining product milestones, active customer retention metrics, engineering OKRs, and market penetration plans.",
+      "type": "presentation",
+      "fileUrl": "https://view.officeapps.live.com/op/view.aspx?src=sample.pptx",
+      "thumbnailUrl": "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&auto=format&fit=crop&q=80",
+      "uploadedBy": "usr_admin_1",
+      "uploadedByName": "System Administrator",
+      "fileSize": "18.4 MB",
+      "slideCount": 14,
+      "previewContent": "Slide 1: Executive Vision - Delivering Unified Media Workflows\nSlide 2: Market Opportunity & Growth Tailwinds\nSlide 3: User Engagement Metrics (42% Increase MoM)\nSlide 4: System Architecture & Vercel Global Edge Latency\nSlide 5: Enterprise Security & Role-Based Access Control\nSlide 6: Q4 Financial Targets & Milestones",
+      "createdAt": "2025-02-19T15:20:00.000Z",
+      "updatedAt": "2025-02-19T15:20:00.000Z"
+    },
+    {
+      "id": "med_word_1",
+      "title": "Client Service Level Agreement & Terms.docx",
+      "description": "Official corporate template specifying SLA response thresholds, incident escalation matrices, and data protection compliance clauses.",
+      "type": "word",
+      "fileUrl": "https://view.officeapps.live.com/op/view.aspx?src=sample.docx",
+      "thumbnailUrl": "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=800&auto=format&fit=crop&q=80",
+      "uploadedBy": "usr_admin_1",
+      "uploadedByName": "System Administrator",
+      "fileSize": "1.2 MB",
+      "pageCount": 8,
+      "previewContent": "MASTER SERVICES AGREEMENT\n\n1. SCOPE OF SERVICES: The Provider covenants to deliver 99.95% portal availability across all regional endpoints.\n2. DATA PRIVACY & COMPLIANCE: User credentials shall be salted and hashed with modern cryptographic primitives. Plaintext secrets are strictly prohibited.\n3. TERMINATION & MODERATION: Administrators retain explicit purview to moderate or remove media found in breach of compliance standards.",
+      "createdAt": "2025-02-20T11:00:00.000Z",
+      "updatedAt": "2025-02-20T11:00:00.000Z"
+    },
+    {
+      "id": "med_doc_1",
+      "title": "Infrastructure Deployment Checklist.md",
+      "description": "Technical manifest containing database migration procedures, environment variable configurations, and automated CI/CD triggers.",
+      "type": "document",
+      "fileUrl": "https://example.com/docs/checklist.txt",
+      "thumbnailUrl": "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&auto=format&fit=crop&q=80",
+      "uploadedBy": "usr_admin_1",
+      "uploadedByName": "System Administrator",
+      "fileSize": "340 KB",
+      "pageCount": 3,
+      "previewContent": "# Vercel & Cloud Deployment Guide\n\n1. Configure DATABASE_URL in Vercel Environment variables.\n2. Set JWT_SECRET with at least 32 cryptographically random bytes.\n3. Execute `npx prisma db push` to generate all relational tables.\n4. Verify /api/health returns 200 OK before routing production traffic.",
+      "createdAt": "2025-02-21T09:15:00.000Z",
+      "updatedAt": "2025-02-21T09:15:00.000Z"
+    },
+    {
+      "id": "med_sheet_1",
+      "title": "Q3 Financial Model & Revenue Projections.xlsx",
+      "description": "Comprehensive financial forecasting model with revenue breakdown, EBITDA analysis, burn rate scenarios, and departmental budget allocations.",
+      "type": "spreadsheet",
+      "fileUrl": "https://example.com/spreadsheets/Q3_financial_model.xlsx",
+      "thumbnailUrl": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop&q=80",
+      "uploadedBy": "usr_admin_1",
+      "uploadedByName": "System Administrator",
+      "fileSize": "4.8 MB",
+      "previewContent": "MONTH | REVENUE | MRR GROWTH | EXPENSES | NET PROFIT\nJan   | $124,500| +12.4%     | $82,300  | +$42,200\nFeb   | $138,200| +11.0%     | $85,100  | +$53,100\nMar   | $156,900| +13.5%     | $89,400  | +$67,500\nApr   | $172,400| +9.8%      | $93,200  | +$79,200\nMay   | $191,800| +11.2%     | $97,500  | +$94,300\nJun   | $215,000| +12.1%     | $102,000 | +$113,000",
+      "createdAt": "2025-02-22T10:00:00.000Z",
+      "updatedAt": "2025-02-22T10:00:00.000Z"
+    },
+    {
+      "id": "med_psd_1",
+      "title": "Brand Identity Mockup & Mobile UI Kit.psd",
+      "description": "Multi-layer Adobe Photoshop production design containing smart object mockups, typography styles, vector logo assets, and mobile app screens.",
+      "type": "psd",
+      "fileUrl": "https://example.com/assets/brand_identity_mockup.psd",
+      "thumbnailUrl": "https://images.unsplash.com/photo-1626785774573-4b799315345d?w=800&auto=format&fit=crop&q=80",
+      "uploadedBy": "usr_admin_1",
+      "uploadedByName": "System Administrator",
+      "fileSize": "24.6 MB",
+      "previewContent": "CANVAS: 3840 x 2160 (4K UHD) · COLOR PROFILE: sRGB IEC61966-2.1 · RESOLUTION: 300 DPI\nLAYERS (14 Groups):\n▶ Hero Device Mockups (Smart Objects)\n▶ Typography & Primary Branding (Inter / Display)\n▶ Dynamic Color Palette Swatches (HEX & Pantone)\n▶ App Screen Overlays & Drop Shadows",
+      "createdAt": "2025-02-23T14:15:00.000Z",
+      "updatedAt": "2025-02-23T14:15:00.000Z"
+    }
+  ],
+  "comments": [
+    {
+      "id": "comm_1",
+      "userId": "usr_user_1",
+      "userName": "Sarah Connor",
+      "userEmail": "sarah.connor@example.com",
+      "mediaId": "med_vid_1",
+      "text": "The drone cinematography in this 4K clip is breathtaking! The color grading on the lake reflections is top notch.",
+      "createdAt": "2025-02-11T09:30:00.000Z",
+      "updatedAt": "2025-02-11T09:30:00.000Z"
+    },
+    {
+      "id": "comm_2",
+      "userId": "usr_user_2",
+      "userName": "Michael Scott",
+      "userEmail": "michael.scott@example.com",
+      "mediaId": "med_vid_1",
+      "text": "Remarkable resolution. Works seamlessly on our conference displays.",
+      "createdAt": "2025-02-11T14:12:00.000Z",
+      "updatedAt": "2025-02-11T14:12:00.000Z"
+    },
+    {
+      "id": "comm_3",
+      "userId": "usr_user_3",
+      "userName": "Elena Rostova",
+      "userEmail": "elena.rostova@example.com",
+      "mediaId": "med_pdf_1",
+      "text": "Crucial reading for our infrastructure team. Section 2 regarding multi-master consensus is especially lucid.",
+      "createdAt": "2025-02-19T11:05:00.000Z",
+      "updatedAt": "2025-02-19T11:05:00.000Z"
+    }
+  ],
+  "reactions": [
+    {
+      "id": "rx_1",
+      "userId": "usr_user_1",
+      "mediaId": "med_vid_1",
+      "type": "LIKE",
+      "createdAt": "2025-02-11T09:20:00.000Z"
+    },
+    {
+      "id": "rx_2",
+      "userId": "usr_user_2",
+      "mediaId": "med_vid_1",
+      "type": "LIKE",
+      "createdAt": "2025-02-11T14:10:00.000Z"
+    },
+    {
+      "id": "rx_3",
+      "userId": "usr_user_3",
+      "mediaId": "med_vid_1",
+      "type": "LIKE",
+      "createdAt": "2025-02-12T08:15:00.000Z"
+    },
+    {
+      "id": "rx_4",
+      "userId": "usr_user_1",
+      "mediaId": "med_photo_1",
+      "type": "LIKE",
+      "createdAt": "2025-02-14T12:00:00.000Z"
+    },
+    {
+      "id": "rx_5",
+      "userId": "usr_user_2",
+      "mediaId": "med_poster_1",
+      "type": "LIKE",
+      "createdAt": "2025-02-16T18:00:00.000Z"
+    },
+    {
+      "id": "rx_6",
+      "userId": "usr_user_3",
+      "mediaId": "med_pdf_1",
+      "type": "LIKE",
+      "createdAt": "2025-02-18T12:30:00.000Z"
+    },
+    {
+      "id": "rx_7",
+      "userId": "usr_user_2",
+      "mediaId": "med_pptx_1",
+      "type": "DISLIKE",
+      "createdAt": "2025-02-19T16:00:00.000Z"
+    }
+  ],
+  "loginActivities": [
+    {
+      "id": "log_1",
+      "userId": "usr_admin_1",
+      "userName": "System Administrator",
+      "email": "admin@mediaportal.com",
+      "loginTime": "2025-02-22T08:00:00.000Z",
+      "logoutTime": null,
+      "status": "SUCCESS",
+      "ipAddress": "192.168.1.1",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "id": "log_2",
+      "userId": "usr_user_1",
+      "userName": "Sarah Connor",
+      "email": "sarah.connor@example.com",
+      "loginTime": "2025-02-22T09:14:00.000Z",
+      "logoutTime": "2025-02-22T10:45:00.000Z",
+      "status": "SUCCESS",
+      "ipAddress": "192.168.1.45",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"
+    },
+    {
+      "id": "log_3",
+      "userId": "usr_unknown",
+      "userName": "Unknown User",
+      "email": "hacker@unauthorized.net",
+      "loginTime": "2025-02-22T03:22:00.000Z",
+      "logoutTime": null,
+      "status": "FAILED",
+      "ipAddress": "45.33.32.156",
+      "userAgent": "curl/7.68.0"
+    }
+  ]
+}

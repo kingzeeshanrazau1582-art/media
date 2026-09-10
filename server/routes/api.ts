@@ -584,6 +584,43 @@ router.get('/admin/users', authenticateToken, requireAdmin, (req, res) => {
   res.json({ users: enrichedUsers });
 });
 
+// POST /api/admin/users - Admin directly creates a new user account
+router.post('/admin/users', authenticateToken, requireAdmin, async (req: AuthRequest, res): Promise<void> => {
+  try {
+    const { name, email, password, role = 'USER', status = 'ACTIVE' } = req.body;
+    if (!name || !email || !password) {
+      res.status(400).json({ error: 'Name, email, and password are required' });
+      return;
+    }
+    if (password.length < 6) {
+      res.status(400).json({ error: 'Password must be at least 6 characters long' });
+      return;
+    }
+    const cleanEmail = email.trim().toLowerCase();
+    const existing = db.findUserByEmail(cleanEmail);
+    if (existing) {
+      res.status(409).json({ error: 'A user account with this email address already exists' });
+      return;
+    }
+    const passwordHash = await hashPassword(password);
+    const newId = `usr_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const created = db.createUser({
+      id: newId,
+      name: name.trim(),
+      email: cleanEmail,
+      passwordHash,
+      role: role === 'ADMIN' ? 'ADMIN' : 'USER',
+      status: (status === 'BLOCKED' || status === 'SUSPENDED') ? 'BLOCKED' : 'ACTIVE',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      lastLoginAt: null
+    });
+    res.status(201).json({ message: `User account created successfully with ID: ${created.id}`, user: created });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to create user account' });
+  }
+});
+
 // PUT /api/admin/users/:id
 router.put('/admin/users/:id', authenticateToken, requireAdmin, (req: AuthRequest, res): void => {
   const { id } = req.params;
