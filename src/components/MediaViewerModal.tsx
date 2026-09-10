@@ -18,6 +18,9 @@ import {
   ShieldAlert,
   FileText,
   Presentation,
+  FileSpreadsheet,
+  Layers,
+  Table,
   Maximize2
 } from 'lucide-react';
 import { MediaItem, CommentItem, ReactionType, User } from '../types';
@@ -343,6 +346,133 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
                         Next Slide <ChevronRight className="w-4 h-4" />
                       </button>
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 📈 Excel / Spreadsheet (XLSX, CSV) Interactive Grid Viewer */}
+              {media.type === 'spreadsheet' && (
+                <div className="w-full max-w-3xl bg-slate-900 border border-slate-800 rounded-xl p-6 text-slate-100 shadow-2xl">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+                    <div className="flex items-center gap-2">
+                      <FileSpreadsheet className="w-5 h-5 text-emerald-400" />
+                      <span className="text-sm font-semibold">Excel &amp; Data Sheet Viewer &middot; XLSX / CSV</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {media.fileSize && (
+                        <span className="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">
+                          {media.fileSize}
+                        </span>
+                      )}
+                      <span className="text-xs px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/60 font-medium">
+                        Workbook Ready
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-950 p-4 rounded-lg border border-slate-800 overflow-x-auto max-h-[38vh]">
+                    {media.previewContent ? (
+                      <div className="space-y-1 font-mono text-xs text-slate-200">
+                        {media.previewContent.split('\n').map((row, rIdx) => {
+                          const cols = row.includes('|') ? row.split('|') : row.split('\t');
+                          return (
+                            <div 
+                              key={rIdx} 
+                              className={`flex items-center gap-2 px-3 py-1.5 rounded transition-colors ${
+                                rIdx === 0 
+                                  ? 'bg-emerald-950/40 text-emerald-300 font-semibold border-b border-emerald-800/40' 
+                                  : 'hover:bg-slate-900/60 border-b border-slate-900/50'
+                              }`}
+                            >
+                              <span className="w-6 text-[10px] text-slate-500 shrink-0 select-none">
+                                {rIdx + 1}
+                              </span>
+                              {cols.map((col, cIdx) => (
+                                <span key={cIdx} className="flex-1 truncate px-2 py-0.5">
+                                  {col.trim()}
+                                </span>
+                              ))}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="p-6 text-center text-slate-400 text-xs">
+                        <Table className="w-8 h-8 text-emerald-500/60 mx-auto mb-2" />
+                        <p className="font-semibold text-slate-300">Spreadsheet Workbook Data</p>
+                        <p className="text-[11px] text-slate-500 mt-1">Multi-sheet dataset with formulas and calculated columns.</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-between">
+                    <p className="text-[11px] text-slate-400">
+                      Compatible with Microsoft Excel, Google Sheets &amp; Apple Numbers.
+                    </p>
+                    <a
+                      href={media.fileUrl}
+                      download
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition-colors cursor-pointer"
+                    >
+                      <Download className="w-3.5 h-3.5" /> Download Spreadsheet
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {/* 🎨 Photoshop & Design Asset (PSD, AI) High-Res Viewer */}
+              {media.type === 'psd' && (
+                <div className="w-full max-w-3xl bg-slate-900 border border-slate-800 rounded-xl p-6 text-slate-100 shadow-2xl">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+                    <div className="flex items-center gap-2">
+                      <Layers className="w-5 h-5 text-sky-400" />
+                      <span className="text-sm font-semibold">Adobe Photoshop Asset &middot; PSD / Design</span>
+                    </div>
+                    {media.fileSize && (
+                      <span className="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">
+                        {media.fileSize}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col md:flex-row gap-4 items-center bg-slate-950 p-4 rounded-lg border border-slate-800 max-h-[38vh] overflow-y-auto">
+                    {media.thumbnailUrl && (
+                      <div className="w-full md:w-1/2 rounded-lg overflow-hidden border border-slate-800 bg-slate-900 shrink-0">
+                        <img 
+                          src={media.thumbnailUrl} 
+                          alt={media.title}
+                          className="w-full h-48 object-cover hover:scale-105 transition-transform" 
+                        />
+                      </div>
+                    )}
+                    <div className="flex-1 space-y-2 text-xs text-slate-300 w-full">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-sky-950 text-sky-400 border border-sky-800/60">
+                          PSD Document
+                        </span>
+                        <span className="text-[11px] text-slate-400">Layered Graphic Source</span>
+                      </div>
+                      <div className="bg-slate-900/80 p-3 rounded-lg border border-slate-800 text-[11px] text-slate-300 font-mono whitespace-pre-wrap leading-relaxed">
+                        {media.previewContent || 'Adobe Photoshop Document with smart objects, vector masks, and RGB/CMYK profiles.'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-between">
+                    <p className="text-[11px] text-slate-400">
+                      Open with Adobe Photoshop, Illustrator, or Affinity Photo.
+                    </p>
+                    <a
+                      href={media.fileUrl}
+                      download
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-sky-600 hover:bg-sky-500 text-white transition-colors cursor-pointer"
+                    >
+                      <Download className="w-3.5 h-3.5" /> Download PSD File
+                    </a>
                   </div>
                 </div>
               )}

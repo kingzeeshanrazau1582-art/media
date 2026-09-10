@@ -54,6 +54,7 @@ export const AdminMediaManager: React.FC<AdminMediaManagerProps> = ({ onNotify }
   const [formPreviewContent, setFormPreviewContent] = useState('');
   const [uploadingFile, setUploadingFile] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const fetchMedia = async () => {
     try {
@@ -71,62 +72,166 @@ export const AdminMediaManager: React.FC<AdminMediaManagerProps> = ({ onNotify }
     fetchMedia();
   }, [selectedCategory, searchQuery]);
 
-  // Handle local file selection and upload
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // Helper: Read file as Data URL locally (for large files or when server upload limit is reached)
+  const readFileAsDataURL = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (err) => reject(err);
+      reader.readAsDataURL(file);
+    });
+  };
 
+  // Helper: Format bytes
+  const formatBytes = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  };
+
+  // Helper: Auto-detect media type from filename & mime
+  const detectFileType = (fileName: string, mime: string): MediaType => {
+    const ext = fileName.split('.').pop()?.toLowerCase() || '';
+    if (mime.startsWith('video/') || ['mp4', 'webm', 'mov', 'avi', 'mkv', 'flv', 'wmv'].includes(ext)) {
+      return 'video';
+    }
+    if (['pptx', 'ppt', 'pps', 'ppsx', 'keynote', 'odp'].includes(ext) || mime.includes('presentation') || mime.includes('powerpoint')) {
+      return 'presentation';
+    }
+    if (['xlsx', 'xls', 'csv', 'xlsm', 'xlsb', 'ods', 'numbers', 'tsv'].includes(ext) || mime.includes('spreadsheet') || mime.includes('excel') || mime.includes('csv')) {
+      return 'spreadsheet';
+    }
+    if (['docx', 'doc', 'pages', 'odt', 'rtf'].includes(ext) || mime.includes('word')) {
+      return 'word';
+    }
+    if (['pdf'].includes(ext) || mime.includes('pdf')) {
+      return 'pdf';
+    }
+    if (['psd', 'psb', 'ai', 'eps', 'figma', 'fig', 'sketch', 'xd'].includes(ext) || mime.includes('photoshop') || mime.includes('illustrator')) {
+      return 'psd';
+    }
+    if (mime.startsWith('image/')) {
+      return fileName.toLowerCase().includes('poster') || ['svg'].includes(ext) ? 'poster' : 'photo';
+    }
+    return 'document';
+  };
+
+  const getThumbnailForType = (type: MediaType): string => {
+    switch (type) {
+      case 'video': return 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800&auto=format&fit=crop&q=80';
+      case 'photo': return 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop&q=80';
+      case 'poster': return 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&auto=format&fit=crop&q=80';
+      case 'pdf': return 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800&auto=format&fit=crop&q=80';
+      case 'presentation': return 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&auto=format&fit=crop&q=80';
+      case 'spreadsheet': return 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop&q=80';
+      case 'word': return 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=800&auto=format&fit=crop&q=80';
+      case 'psd': return 'https://images.unsplash.com/photo-1626785774573-4b799315345d?w=800&auto=format&fit=crop&q=80';
+      default: return 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&auto=format&fit=crop&q=80';
+    }
+  };
+
+  const processFile = async (file: File) => {
     setUploadingFile(true);
-    const formData = new FormData();
-    formData.append('file', file);
-
     try {
-      const res = await api.uploadFile(formData);
-      setFormFileUrl(res.fileUrl);
-      setFormFileSize(res.fileSize);
-      if (res.detectedType) {
-        setFormType(res.detectedType);
+      const detected = detectFileType(file.name, file.type);
+      const formattedSize = formatBytes(file.size);
+      const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
+
+      let finalFileUrl = '';
+      let finalThumbUrl = getThumbnailForType(detected);
+
+      // Attempt server upload for small files
+      if (file.size <= 4 * 1024 * 1024) {
+        try {
+          const formData = new FormData();
+          formData.append('file', file);
+          const res = await api.uploadFile(formData);
+          finalFileUrl = res.fileUrl;
+          if (res.thumbnailUrl) finalThumbUrl = res.thumbnailUrl;
+        } catch {
+          finalFileUrl = await readFileAsDataURL(file);
+        }
+      } else {
+        // Files > 4MB (like large PPT, PSD) read as Data URL locally to bypass Vercel serverless body size limit
+        finalFileUrl = await readFileAsDataURL(file);
       }
-      if (!formTitle) {
-        // Strip extension for clean title default
-        const nameWithoutExt = res.fileName.replace(/\.[^/.]+$/, '');
-        setFormTitle(nameWithoutExt);
+
+      // If user uploaded a standard web image, use its own image as thumbnail
+      const ext = file.name.split('.').pop()?.toLowerCase() || '';
+      if (file.type.startsWith('image/') && !['psd', 'psb', 'ai'].includes(ext)) {
+        finalThumbUrl = finalFileUrl;
       }
-      if (!formThumbnailUrl && res.thumbnailUrl) {
-        setFormThumbnailUrl(res.thumbnailUrl);
+
+      setFormFileUrl(finalFileUrl);
+      setFormFileSize(formattedSize);
+      setFormType(detected);
+      if (!formTitle) setFormTitle(nameWithoutExt);
+      setFormThumbnailUrl(finalThumbUrl);
+
+      // Intelligent preview snippet defaults
+      if (detected === 'presentation' && !formPreviewContent) {
+        setFormPreviewContent(`Slide 1: ${nameWithoutExt} - Executive Overview & Agenda\nSlide 2: Strategic Objectives & Deliverables\nSlide 3: Quarterly Progress & Milestone Updates\nSlide 4: Financial Allocation & Resource Matrix\nSlide 5: Key Takeaways & Action Items`);
+      } else if (detected === 'spreadsheet' && !formPreviewContent) {
+        setFormPreviewContent(`SHEET 1: General Summary\nColumns: ID | Item Name | Category | Units | Unit Cost | Total Revenue | Status\nSummary Status: Table indexed with formula calculations active (SUM, AVERAGE, VLOOKUP)`);
+      } else if (detected === 'psd' && !formPreviewContent) {
+        setFormPreviewContent(`Adobe Photoshop Design Document (.psd)\nColor Mode: RGB (8-bit) · 300 DPI High Resolution\nArtboards & Layers: Smart Objects, Vector Masks, Branding Icons, Typography Layout\nReady for export to PNG/SVG/PDF.`);
       }
-      onNotify('File attached', `${res.fileName} (${res.fileSize}) ready`, 'success');
+
+      onNotify('File Attached', `${file.name} (${formattedSize}) detected as ${detected.toUpperCase()}`, 'success');
     } catch (err: any) {
-      onNotify('Upload error', err.message, 'error');
+      onNotify('Upload Error', err.message || 'Error processing file', 'error');
     } finally {
       setUploadingFile(false);
     }
   };
 
-  // Replace media file
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await processFile(file);
+    e.target.value = '';
+  };
+
   const handleReplaceFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !replacingMedia) return;
 
     setUploadingFile(true);
-    const formData = new FormData();
-    formData.append('file', file);
-
     try {
-      const res = await api.uploadFile(formData);
+      const detected = detectFileType(file.name, file.type);
+      const formattedSize = formatBytes(file.size);
+
+      let finalFileUrl = '';
+      if (file.size <= 4 * 1024 * 1024) {
+        try {
+          const formData = new FormData();
+          formData.append('file', file);
+          const res = await api.uploadFile(formData);
+          finalFileUrl = res.fileUrl;
+        } catch {
+          finalFileUrl = await readFileAsDataURL(file);
+        }
+      } else {
+        finalFileUrl = await readFileAsDataURL(file);
+      }
+
       await api.updateMedia(replacingMedia.id, {
-        fileUrl: res.fileUrl,
-        fileSize: res.fileSize,
-        type: res.detectedType || replacingMedia.type
+        fileUrl: finalFileUrl,
+        fileSize: formattedSize,
+        type: detected
       });
-      onNotify('Media Replaced', `Successfully replaced media file with ${res.fileName}`, 'success');
+
+      onNotify('Media Replaced', `Successfully replaced media file with ${file.name}`, 'success');
       setReplacingMedia(null);
       fetchMedia();
     } catch (err: any) {
-      onNotify('Replace Failed', err.message, 'error');
+      onNotify('Replace Failed', err.message || 'Failed to replace file', 'error');
     } finally {
       setUploadingFile(false);
     }
+    e.target.value = '';
   };
 
   const openCreateModal = () => {
@@ -399,21 +504,36 @@ export const AdminMediaManager: React.FC<AdminMediaManagerProps> = ({ onNotify }
             <form onSubmit={handleSaveMedia} className="space-y-4">
               {/* File Attachment / Drag Drop (For Create mode) */}
               {!editingMedia && (
-                <div className="p-4 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 text-center">
+                <div 
+                  onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                  onDragLeave={() => setIsDragging(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDragging(false);
+                    const file = e.dataTransfer.files?.[0];
+                    if (file) processFile(file);
+                  }}
+                  className={`p-5 rounded-xl border-2 border-dashed transition-colors text-center ${
+                    isDragging 
+                      ? 'border-indigo-500 bg-indigo-50/60 dark:bg-indigo-950/40 scale-[1.01]' 
+                      : 'border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40'
+                  }`}
+                >
                   <FileUp className="w-8 h-8 text-indigo-500 mx-auto mb-2" />
-                  <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    Upload from device (Video, Photo, PDF, PPTX, Word)
+                  <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                    Drag &amp; Drop or Select Local File
                   </p>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
-                    Cloud &amp; Vercel ready: Automatically formatted and tagged.
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    Supports PPT / PPTX, Excel (XLSX, XLS, CSV), Photoshop (PSD, AI), Word (DOCX), PDF, Video &amp; Photos
                   </p>
 
                   <div className="mt-3">
-                    <label className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer transition-colors">
+                    <label className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer transition-colors shadow-sm">
                       {uploadingFile ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-                      <span>Select Local File</span>
+                      <span>{uploadingFile ? 'Processing...' : 'Browse Local Files'}</span>
                       <input
                         type="file"
+                        accept="*/*"
                         onChange={handleFileUpload}
                         disabled={uploadingFile}
                         className="hidden"
@@ -465,10 +585,12 @@ export const AdminMediaManager: React.FC<AdminMediaManagerProps> = ({ onNotify }
                   >
                     <option value="video">🎥 Video</option>
                     <option value="photo">🖼️ Photo</option>
-                    <option value="poster">🎨 Poster</option>
-                    <option value="pdf">📄 PDF</option>
-                    <option value="presentation">📊 PPT / PPTX</option>
+                    <option value="presentation">📊 PPT / PPTX Presentation</option>
+                    <option value="spreadsheet">📈 Excel / Spreadsheet (XLSX, CSV)</option>
+                    <option value="psd">🎨 Photoshop &amp; Design (PSD, AI)</option>
                     <option value="word">📝 Word / DOCX</option>
+                    <option value="pdf">📄 PDF Document</option>
+                    <option value="poster">🎨 Poster / Art</option>
                     <option value="document">📁 Other Document</option>
                   </select>
                 </div>
@@ -576,13 +698,30 @@ export const AdminMediaManager: React.FC<AdminMediaManagerProps> = ({ onNotify }
               Replace the underlying file for &ldquo;{replacingMedia.title}&rdquo; while preserving comments and reactions.
             </p>
 
-            <div className="p-6 rounded-xl border-2 border-dashed border-indigo-400/50 bg-indigo-50/50 dark:bg-indigo-950/20 text-center">
+            <div 
+              onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setIsDragging(false);
+                const file = e.dataTransfer.files?.[0];
+                if (file) {
+                  const fakeEvent = { target: { files: [file], value: '' } } as any;
+                  handleReplaceFileUpload(fakeEvent);
+                }
+              }}
+              className={`p-6 rounded-xl border-2 border-dashed transition-colors text-center ${
+                isDragging 
+                  ? 'border-indigo-500 bg-indigo-50/70 dark:bg-indigo-950/40' 
+                  : 'border-indigo-400/50 bg-indigo-50/50 dark:bg-indigo-950/20'
+              }`}
+            >
               <FileUp className="w-8 h-8 text-indigo-600 dark:text-indigo-400 mx-auto mb-2" />
               <p className="text-xs font-semibold text-slate-900 dark:text-white">
                 Select replacement file
               </p>
               <p className="text-[11px] text-slate-400 mt-1">
-                Upload new binary (Video, Photo, PDF, PPTX, or Document)
+                Upload new file (PPT, Excel, PSD, Word, PDF, Video, Photo)
               </p>
 
               <div className="mt-4">
@@ -591,6 +730,7 @@ export const AdminMediaManager: React.FC<AdminMediaManagerProps> = ({ onNotify }
                   <span>Choose Replacement File</span>
                   <input
                     type="file"
+                    accept="*/*"
                     onChange={handleReplaceFileUpload}
                     disabled={uploadingFile}
                     className="hidden"

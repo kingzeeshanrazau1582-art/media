@@ -81,8 +81,12 @@ export const MediaCard: React.FC<MediaCardProps> = ({
         return { label: 'PDF', icon: FileText, bg: 'bg-red-500/90 text-white' };
       case 'presentation':
         return { label: 'PPTX', icon: Presentation, bg: 'bg-orange-500/90 text-white' };
+      case 'spreadsheet':
+        return { label: 'Excel', icon: FileSpreadsheet, bg: 'bg-emerald-600/90 text-white' };
+      case 'psd':
+        return { label: 'PSD', icon: Palette, bg: 'bg-indigo-600/90 text-white' };
       case 'word':
-        return { label: 'Word', icon: FileSpreadsheet, bg: 'bg-blue-500/90 text-white' };
+        return { label: 'Word', icon: FileText, bg: 'bg-blue-500/90 text-white' };
       default:
         return { label: 'Doc', icon: Files, bg: 'bg-purple-500/90 text-white' };
     }

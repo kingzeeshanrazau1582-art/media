@@ -224,6 +224,34 @@ const INITIAL_DATA: DatabaseSchema = {
       previewContent: '# Vercel & Cloud Deployment Guide\n\n1. Configure DATABASE_URL in Vercel Environment variables.\n2. Set JWT_SECRET with at least 32 cryptographically random bytes.\n3. Execute `npx prisma db push` to generate all relational tables.\n4. Verify /api/health returns 200 OK before routing production traffic.',
       createdAt: '2025-02-21T09:15:00.000Z',
       updatedAt: '2025-02-21T09:15:00.000Z'
+    },
+    {
+      id: 'med_sheet_1',
+      title: 'Q3 Financial Model & Revenue Projections.xlsx',
+      description: 'Comprehensive financial forecasting model with revenue breakdown, EBITDA analysis, burn rate scenarios, and departmental budget allocations.',
+      type: 'spreadsheet',
+      fileUrl: 'https://example.com/spreadsheets/Q3_financial_model.xlsx',
+      thumbnailUrl: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop&q=80',
+      uploadedBy: 'usr_admin_1',
+      uploadedByName: 'System Administrator',
+      fileSize: '4.8 MB',
+      previewContent: 'MONTH | REVENUE | MRR GROWTH | EXPENSES | NET PROFIT\nJan   | $124,500| +12.4%     | $82,300  | +$42,200\nFeb   | $138,200| +11.0%     | $85,100  | +$53,100\nMar   | $156,900| +13.5%     | $89,400  | +$67,500\nApr   | $172,400| +9.8%      | $93,200  | +$79,200\nMay   | $191,800| +11.2%     | $97,500  | +$94,300\nJun   | $215,000| +12.1%     | $102,000 | +$113,000',
+      createdAt: '2025-02-22T10:00:00.000Z',
+      updatedAt: '2025-02-22T10:00:00.000Z'
+    },
+    {
+      id: 'med_psd_1',
+      title: 'Brand Identity Mockup & Mobile UI Kit.psd',
+      description: 'Multi-layer Adobe Photoshop production design containing smart object mockups, typography styles, vector logo assets, and mobile app screens.',
+      type: 'psd',
+      fileUrl: 'https://example.com/assets/brand_identity_mockup.psd',
+      thumbnailUrl: 'https://images.unsplash.com/photo-1626785774573-4b799315345d?w=800&auto=format&fit=crop&q=80',
+      uploadedBy: 'usr_admin_1',
+      uploadedByName: 'System Administrator',
+      fileSize: '24.6 MB',
+      previewContent: 'CANVAS: 3840 x 2160 (4K UHD) · COLOR PROFILE: sRGB IEC61966-2.1 · RESOLUTION: 300 DPI\nLAYERS (14 Groups):\n▶ Hero Device Mockups (Smart Objects)\n▶ Typography & Primary Branding (Inter / Display)\n▶ Dynamic Color Palette Swatches (HEX & Pantone)\n▶ App Screen Overlays & Drop Shadows',
+      createdAt: '2025-02-23T14:15:00.000Z',
+      updatedAt: '2025-02-23T14:15:00.000Z'
     }
   ],
   comments: [

@@ -278,7 +278,9 @@ router.get('/media', optionalAuthenticateToken, (req: AuthRequest, res) => {
     poster: 0,
     pdf: 0,
     presentation: 0,
+    spreadsheet: 0,
     word: 0,
+    psd: 0,
     document: 0
   };
 
@@ -768,20 +770,33 @@ router.put('/admin/settings', authenticateToken, requireAdmin, async (req: AuthR
 function detectMediaType(fileName: string, mime: string): MediaType {
   const ext = fileName.split('.').pop()?.toLowerCase() || '';
 
-  if (mime.startsWith('video/') || ['mp4', 'webm', 'mov', 'avi', 'mkv'].includes(ext)) {
+  // Video formats
+  if (mime.startsWith('video/') || ['mp4', 'webm', 'mov', 'avi', 'mkv', 'flv', 'wmv', 'm4v'].includes(ext)) {
     return 'video';
   }
-  if (['pptx', 'ppt', 'keynote', 'odp'].includes(ext) || mime.includes('presentation')) {
+  // Presentation (PowerPoint / PPTX / PPT)
+  if (['pptx', 'ppt', 'pps', 'ppsx', 'keynote', 'odp', 'potx'].includes(ext) || mime.includes('presentation') || mime.includes('powerpoint')) {
     return 'presentation';
   }
+  // Spreadsheets (Excel / XLSX / XLS / CSV)
+  if (['xlsx', 'xls', 'csv', 'xlsm', 'xlsb', 'ods', 'numbers', 'tsv'].includes(ext) || mime.includes('spreadsheet') || mime.includes('excel') || mime.includes('csv')) {
+    return 'spreadsheet';
+  }
+  // Word / Text Processing
+  if (['docx', 'doc', 'pages', 'odt', 'rtf'].includes(ext) || mime.includes('word') || mime.includes('officedocument.wordprocessingml')) {
+    return 'word';
+  }
+  // PDF
   if (['pdf'].includes(ext) || mime.includes('pdf')) {
     return 'pdf';
   }
-  if (['docx', 'doc', 'pages', 'odt'].includes(ext) || mime.includes('word') || mime.includes('officedocument.wordprocessingml')) {
-    return 'word';
+  // Photoshop & Creative Design Assets (PSD, PSB, AI, EPS, FIGMA)
+  if (['psd', 'psb', 'ai', 'eps', 'figma', 'fig', 'sketch', 'xd'].includes(ext) || mime.includes('photoshop') || mime.includes('illustrator')) {
+    return 'psd';
   }
+  // Photos & Posters
   if (mime.startsWith('image/')) {
-    if (fileName.toLowerCase().includes('poster') || ['svg', 'ai', 'eps'].includes(ext)) {
+    if (fileName.toLowerCase().includes('poster') || ['svg'].includes(ext)) {
       return 'poster';
     }
     return 'photo';
@@ -801,8 +816,12 @@ function getDefaultThumbnail(type: MediaType): string {
       return 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800&auto=format&fit=crop&q=80';
     case 'presentation':
       return 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&auto=format&fit=crop&q=80';
+    case 'spreadsheet':
+      return 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop&q=80';
     case 'word':
       return 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=800&auto=format&fit=crop&q=80';
+    case 'psd':
+      return 'https://images.unsplash.com/photo-1626785774573-4b799315345d?w=800&auto=format&fit=crop&q=80';
     default:
       return 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&auto=format&fit=crop&q=80';
   }

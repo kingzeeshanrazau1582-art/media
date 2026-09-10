@@ -6,7 +6,9 @@ export type MediaType =
   | 'poster'
   | 'pdf'
   | 'presentation'
+  | 'spreadsheet'
   | 'word'
+  | 'psd'
   | 'document';
 
 export type ReactionType = 'LIKE' | 'DISLIKE';

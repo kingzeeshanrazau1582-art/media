@@ -7,7 +7,8 @@ import {
   Presentation, 
   FileSpreadsheet, 
   Files, 
-  Layers 
+  Layers,
+  Sparkles
 } from 'lucide-react';
 import { MediaType } from '../types';
 
@@ -22,11 +23,13 @@ export const CATEGORIES: CategoryOption[] = [
   { id: 'cat-all', type: 'all', label: 'All Media', icon: Layers },
   { id: 'cat-video', type: 'video', label: 'Videos', icon: Film },
   { id: 'cat-photo', type: 'photo', label: 'Photos', icon: ImageIcon },
-  { id: 'cat-poster', type: 'poster', label: 'Posters', icon: Palette },
-  { id: 'cat-pdf', type: 'pdf', label: 'PDFs', icon: FileText },
   { id: 'cat-presentation', type: 'presentation', label: 'PPT / PPTX', icon: Presentation },
-  { id: 'cat-word', type: 'word', label: 'Word / DOCX', icon: FileSpreadsheet },
-  { id: 'cat-document', type: 'document', label: 'Other Documents', icon: Files },
+  { id: 'cat-spreadsheet', type: 'spreadsheet', label: 'Excel / CSV', icon: FileSpreadsheet },
+  { id: 'cat-psd', type: 'psd', label: 'PSD / Design', icon: Sparkles },
+  { id: 'cat-word', type: 'word', label: 'Word Docs', icon: FileText },
+  { id: 'cat-pdf', type: 'pdf', label: 'PDFs', icon: FileText },
+  { id: 'cat-poster', type: 'poster', label: 'Posters', icon: Palette },
+  { id: 'cat-document', type: 'document', label: 'Other Files', icon: Files },
 ];
 
 interface CategoryNavProps {
