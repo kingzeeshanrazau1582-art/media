@@ -201,11 +201,27 @@ export const api = {
   getAdminComments: () =>
     request<{ comments: CommentItem[] }>('/api/admin/comments'),
 
-  getLoginActivity: () =>
-    request<{ activities: LoginActivityRecord[]; logs?: LoginActivityRecord[] }>('/api/admin/login-activity'),
+  getLoginActivity: async () => {
+    const res = await request<{ activities?: LoginActivityRecord[]; logs?: LoginActivityRecord[] }>('/api/admin/login-activity');
+    const items = res.activities || res.logs || [];
+    return { activities: items, logs: items };
+  },
 
-  getAdminLogs: () =>
-    request<{ logs: LoginActivityRecord[]; activities?: LoginActivityRecord[] }>('/api/admin/login-activity'),
+  getAdminLogs: async () => {
+    const res = await request<{ activities?: LoginActivityRecord[]; logs?: LoginActivityRecord[] }>('/api/admin/login-activity');
+    const items = res.logs || res.activities || [];
+    return { logs: items, activities: items };
+  },
+
+  clearAdminLogs: () =>
+    request<{ message: string }>('/api/admin/login-activity', {
+      method: 'DELETE'
+    }),
+
+  deleteAdminLog: (id: string) =>
+    request<{ message: string }>(`/api/admin/login-activity/${id}`, {
+      method: 'DELETE'
+    }),
 
   getAdminSettings: () =>
     request<{ settings: AdminSettingsData }>('/api/admin/settings'),

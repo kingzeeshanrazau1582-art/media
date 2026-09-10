@@ -1,5 +1,7 @@
 import express, { Response } from 'express';
 import multer from 'multer';
+import fs from 'fs';
+import path from 'path';
 import { db } from '../db';
 import { 
   AuthRequest, 
@@ -14,10 +16,20 @@ import { MediaType, User } from '../types';
 
 const router = express.Router();
 
-// Configure multer for file uploads in memory (fits Vercel serverless / Edge / container without disk locks)
+// Ensure uploads directory exists
+const uploadsDir = path.join(process.cwd(), 'uploads');
+try {
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+} catch (e) {
+  console.warn('Could not create uploads directory in api router:', e);
+}
+
+// Configure multer for file uploads with 250MB max limit
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 50 * 1024 * 1024 } // 50MB
+  limits: { fileSize: 250 * 1024 * 1024 } // 250MB
 });
 
 // Helper for generating unique ids without external package
@@ -121,6 +133,17 @@ router.post('/auth/login', async (req, res): Promise<void> => {
     }
 
     if (user.status === 'SUSPENDED' || user.status === 'BLOCKED') {
+      db.recordLoginActivity({
+        id: generateId('log'),
+        userId: user.id,
+        userName: user.name,
+        email: user.email,
+        loginTime: new Date().toISOString(),
+        logoutTime: null,
+        status: 'BLOCKED',
+        ipAddress: req.ip || '127.0.0.1',
+        userAgent: (req.headers['user-agent'] as string) || 'Browser'
+      });
       res.status(403).json({ 
         error: `This account (ID: ${user.id}) has been blocked by Administrator. You cannot log in.` 
       });
@@ -199,8 +222,19 @@ router.post('/auth/admin-login', async (req, res): Promise<void> => {
       return;
     }
 
-    if (adminUser.status === 'SUSPENDED') {
-      res.status(403).json({ error: 'Admin account has been deactivated.' });
+    if (adminUser.status === 'SUSPENDED' || adminUser.status === 'BLOCKED') {
+      db.recordLoginActivity({
+        id: generateId('log'),
+        userId: adminUser.id,
+        userName: adminUser.name,
+        email: adminUser.email,
+        loginTime: new Date().toISOString(),
+        logoutTime: null,
+        status: 'BLOCKED',
+        ipAddress: req.ip || '127.0.0.1',
+        userAgent: (req.headers['user-agent'] as string) || 'Browser'
+      });
+      res.status(403).json({ error: 'Admin account has been deactivated or blocked.' });
       return;
     }
 
@@ -333,6 +367,43 @@ router.get('/media/:id', optionalAuthenticateToken, (req: AuthRequest, res): voi
   });
 });
 
+// Helper to safely write base64 Data URLs to disk so data.json stays lightweight and fast
+function persistDataUrlIfPresent(inputUrl: string, prefix = 'media'): string {
+  if (!inputUrl || typeof inputUrl !== 'string' || !inputUrl.startsWith('data:')) {
+    return inputUrl;
+  }
+  try {
+    const match = inputUrl.match(/^data:([^;]+);base64,(.+)$/);
+    if (match) {
+      const mime = match[1];
+      const base64Content = match[2];
+      const buffer = Buffer.from(base64Content, 'base64');
+      let ext = '.bin';
+      if (mime.includes('video/mp4')) ext = '.mp4';
+      else if (mime.includes('video/webm')) ext = '.webm';
+      else if (mime.includes('video/ogg')) ext = '.ogv';
+      else if (mime.includes('video/quicktime')) ext = '.mov';
+      else if (mime.includes('image/png')) ext = '.png';
+      else if (mime.includes('image/jpeg')) ext = '.jpg';
+      else if (mime.includes('image/webp')) ext = '.webp';
+      else if (mime.includes('image/gif')) ext = '.gif';
+      else if (mime.includes('pdf')) ext = '.pdf';
+      else if (mime.includes('sheet') || mime.includes('excel')) ext = '.xlsx';
+      else if (mime.includes('presentation') || mime.includes('powerpoint')) ext = '.pptx';
+      else if (mime.includes('word') || mime.includes('document')) ext = '.docx';
+      else if (mime.includes('photoshop')) ext = '.psd';
+
+      const diskFilename = `${prefix}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}${ext}`;
+      const diskPath = path.join(uploadsDir, diskFilename);
+      fs.writeFileSync(diskPath, buffer);
+      return `/uploads/${diskFilename}`;
+    }
+  } catch (err) {
+    console.warn('Failed to save data URL to disk, keeping data URL fallback:', err);
+  }
+  return inputUrl;
+}
+
 // POST /api/media (Admin only)
 router.post('/media', authenticateToken, requireAdmin, (req: AuthRequest, res): void => {
   try {
@@ -354,13 +425,17 @@ router.post('/media', authenticateToken, requireAdmin, (req: AuthRequest, res): 
       return;
     }
 
+    // Auto-persist large base64 URLs to uploads folder if needed
+    const persistedFileUrl = persistDataUrlIfPresent(fileUrl.trim(), `med_${type}`);
+    const persistedThumbUrl = thumbnailUrl ? persistDataUrlIfPresent(thumbnailUrl.trim(), 'thumb') : '';
+
     const newMedia = db.createMedia({
       id: generateId('med'),
       title: title.trim(),
       description: (description || '').trim(),
       type: type as MediaType,
-      fileUrl: fileUrl.trim(),
-      thumbnailUrl: (thumbnailUrl || '').trim() || getDefaultThumbnail(type),
+      fileUrl: persistedFileUrl,
+      thumbnailUrl: persistedThumbUrl || getDefaultThumbnail(type),
       uploadedBy: req.user!.id,
       uploadedByName: req.user!.name,
       fileSize: fileSize || '5.0 MB',
@@ -385,7 +460,14 @@ router.post('/media', authenticateToken, requireAdmin, (req: AuthRequest, res): 
 router.put('/media/:id', authenticateToken, requireAdmin, (req: AuthRequest, res): void => {
   try {
     const { id } = req.params;
-    const updates = req.body;
+    const updates = { ...req.body };
+
+    if (updates.fileUrl) {
+      updates.fileUrl = persistDataUrlIfPresent(updates.fileUrl, 'med_updated');
+    }
+    if (updates.thumbnailUrl) {
+      updates.thumbnailUrl = persistDataUrlIfPresent(updates.thumbnailUrl, 'thumb_updated');
+    }
 
     const updated = db.updateMedia(id, {
       ...updates,
@@ -419,7 +501,7 @@ router.delete('/media/:id', authenticateToken, requireAdmin, (req: AuthRequest, 
   res.json({ message: 'Media removed successfully' });
 });
 
-// POST /api/upload (Admin file upload supporting Vercel and container)
+// POST /api/upload (Admin file upload supporting large files & streaming)
 router.post('/upload', authenticateToken, requireAdmin, upload.single('file'), (req: AuthRequest, res): void => {
   try {
     if (!req.file) {
@@ -432,15 +514,25 @@ router.post('/upload', authenticateToken, requireAdmin, upload.single('file'), (
     // Detect media category from MIME type & extension
     const detectedType = detectMediaType(originalname, mimetype);
 
-    // Convert buffer to data URL so it works seamlessly on serverless platforms (Vercel, AWS Lambda) without writing to readonly ephemeral disks
-    const base64 = buffer.toString('base64');
-    const dataUrl = `data:${mimetype};base64,${base64}`;
+    let finalFileUrl: string;
+    try {
+      const ext = path.extname(originalname) || '.bin';
+      const cleanBase = path.basename(originalname, ext).replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 40);
+      const diskFilename = `file_${Date.now()}_${cleanBase}${ext}`;
+      const diskPath = path.join(uploadsDir, diskFilename);
+      fs.writeFileSync(diskPath, buffer);
+      finalFileUrl = `/uploads/${diskFilename}`;
+    } catch (diskErr) {
+      console.warn('Could not write uploaded file to disk, falling back to data URL:', diskErr);
+      const base64 = buffer.toString('base64');
+      finalFileUrl = `data:${mimetype};base64,${base64}`;
+    }
 
     const formattedSize = formatBytes(size);
 
     res.json({
       message: 'File processed successfully',
-      fileUrl: dataUrl,
+      fileUrl: finalFileUrl,
       fileName: originalname,
       fileSize: formattedSize,
       detectedType,
@@ -734,7 +826,46 @@ router.get('/admin/comments', authenticateToken, requireAdmin, (req, res) => {
 // GET /api/admin/login-activity
 router.get('/admin/login-activity', authenticateToken, requireAdmin, (req, res) => {
   const activities = db.getLoginActivities();
-  res.json({ activities });
+  const allUsers = db.getUsers();
+
+  // Enrich each record with current user status and block capability
+  const enriched = activities.map(act => {
+    const user = allUsers.find(
+      u => u.id === act.userId || (act.email && u.email.toLowerCase() === act.email.toLowerCase())
+    );
+
+    return {
+      ...act,
+      userEmail: act.email,
+      userStatus: user ? user.status : (act.status === 'BLOCKED' ? 'BLOCKED' : 'UNKNOWN'),
+      userRole: user?.role,
+      canBlock: Boolean(user && user.role !== 'ADMIN')
+    };
+  });
+
+  // Return both 'activities' and 'logs' keys so frontend callers succeed regardless of naming
+  res.json({ 
+    activities: enriched, 
+    logs: enriched,
+    total: enriched.length 
+  });
+});
+
+// DELETE /api/admin/login-activity (Clear all login activity logs)
+router.delete('/admin/login-activity', authenticateToken, requireAdmin, (req, res) => {
+  db.clearLoginActivities();
+  res.json({ message: 'All login activity audit records have been cleared successfully' });
+});
+
+// DELETE /api/admin/login-activity/:id (Delete a single log entry)
+router.delete('/admin/login-activity/:id', authenticateToken, requireAdmin, (req, res) => {
+  const { id } = req.params;
+  const deleted = db.deleteLoginActivity(id);
+  if (!deleted) {
+    res.status(404).json({ error: 'Audit record not found' });
+    return;
+  }
+  res.json({ message: 'Audit record removed' });
 });
 
 // GET /api/admin/settings

@@ -3,9 +3,9 @@ import apiRoutes from './routes/api';
 
 const app = express();
 
-// Increase JSON & urlencoded limits for handling image/media payloads
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+// Increase JSON & urlencoded limits for handling large image/media payloads
+app.use(express.json({ limit: '250mb' }));
+app.use(express.urlencoded({ extended: true, limit: '250mb' }));
 
 // CORS headers for serverless environment
 app.use((req, res, next) => {

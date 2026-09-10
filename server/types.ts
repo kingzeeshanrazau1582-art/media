@@ -71,9 +71,11 @@ export interface LoginActivity {
   email: string;
   loginTime: string;
   logoutTime: string | null;
-  status: 'SUCCESS' | 'FAILED';
+  status: 'SUCCESS' | 'FAILED' | 'BLOCKED';
   ipAddress?: string;
   userAgent?: string;
+  userStatus?: UserStatus | 'UNKNOWN';
+  canBlock?: boolean;
 }
 
 export interface AdminSettings {

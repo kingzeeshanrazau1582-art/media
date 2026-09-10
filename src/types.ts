@@ -71,9 +71,11 @@ export interface LoginActivityRecord {
   userEmail?: string;
   loginTime: string;
   logoutTime: string | null;
-  status: 'SUCCESS' | 'FAILED';
+  status: 'SUCCESS' | 'FAILED' | 'BLOCKED';
   ipAddress?: string;
   userAgent?: string;
+  userStatus?: UserStatus | 'UNKNOWN';
+  canBlock?: boolean;
 }
 
 export type LoginLog = LoginActivityRecord;

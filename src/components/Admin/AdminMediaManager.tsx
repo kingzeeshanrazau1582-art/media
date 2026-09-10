@@ -142,19 +142,15 @@ export const AdminMediaManager: React.FC<AdminMediaManagerProps> = ({ onNotify }
       let finalFileUrl = '';
       let finalThumbUrl = getThumbnailForType(detected);
 
-      // Attempt server upload for small files
-      if (file.size <= 4 * 1024 * 1024) {
-        try {
-          const formData = new FormData();
-          formData.append('file', file);
-          const res = await api.uploadFile(formData);
-          finalFileUrl = res.fileUrl;
-          if (res.thumbnailUrl) finalThumbUrl = res.thumbnailUrl;
-        } catch {
-          finalFileUrl = await readFileAsDataURL(file);
-        }
-      } else {
-        // Files > 4MB (like large PPT, PSD) read as Data URL locally to bypass Vercel serverless body size limit
+      // Upload file directly to server via multipart to keep JSON payloads small and prevent HTTP 413
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await api.uploadFile(formData);
+        finalFileUrl = res.fileUrl;
+        if (res.thumbnailUrl) finalThumbUrl = res.thumbnailUrl;
+      } catch (uploadErr) {
+        console.warn('Multipart upload failed, reading locally as data URL:', uploadErr);
         finalFileUrl = await readFileAsDataURL(file);
       }
 
@@ -204,16 +200,12 @@ export const AdminMediaManager: React.FC<AdminMediaManagerProps> = ({ onNotify }
       const formattedSize = formatBytes(file.size);
 
       let finalFileUrl = '';
-      if (file.size <= 4 * 1024 * 1024) {
-        try {
-          const formData = new FormData();
-          formData.append('file', file);
-          const res = await api.uploadFile(formData);
-          finalFileUrl = res.fileUrl;
-        } catch {
-          finalFileUrl = await readFileAsDataURL(file);
-        }
-      } else {
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await api.uploadFile(formData);
+        finalFileUrl = res.fileUrl;
+      } catch {
         finalFileUrl = await readFileAsDataURL(file);
       }
 
@@ -267,13 +259,34 @@ export const AdminMediaManager: React.FC<AdminMediaManagerProps> = ({ onNotify }
 
     setSubmitting(true);
     try {
+      let finalFileUrl = formFileUrl.trim();
+      let finalThumbUrl = formThumbnailUrl.trim();
+
+      // If the media file is a large base64 data URL, convert to Blob and upload via multipart
+      if (finalFileUrl.startsWith('data:')) {
+        try {
+          const res = await fetch(finalFileUrl);
+          const blob = await res.blob();
+          const ext = formType === 'video' ? 'mp4' : formType === 'photo' ? 'jpg' : formType === 'presentation' ? 'pptx' : 'bin';
+          const formData = new FormData();
+          formData.append('file', blob, `${formTitle.replace(/[^a-zA-Z0-9]/g, '_')}.${ext}`);
+          const upRes = await api.uploadFile(formData);
+          if (upRes.fileUrl) {
+            finalFileUrl = upRes.fileUrl;
+            setFormFileUrl(finalFileUrl);
+          }
+        } catch (convErr) {
+          console.warn('Could not multipart upload data URL, sending directly:', convErr);
+        }
+      }
+
       if (editingMedia) {
         await api.updateMedia(editingMedia.id, {
           title: formTitle,
           description: formDescription,
           type: formType,
-          fileUrl: formFileUrl,
-          thumbnailUrl: formThumbnailUrl,
+          fileUrl: finalFileUrl,
+          thumbnailUrl: finalThumbUrl,
           fileSize: formFileSize,
           duration: formDuration,
           previewContent: formPreviewContent
@@ -285,8 +298,8 @@ export const AdminMediaManager: React.FC<AdminMediaManagerProps> = ({ onNotify }
           title: formTitle,
           description: formDescription,
           type: formType,
-          fileUrl: formFileUrl,
-          thumbnailUrl: formThumbnailUrl,
+          fileUrl: finalFileUrl,
+          thumbnailUrl: finalThumbUrl,
           fileSize: formFileSize || '5 MB',
           duration: formDuration,
           previewContent: formPreviewContent
@@ -296,7 +309,8 @@ export const AdminMediaManager: React.FC<AdminMediaManagerProps> = ({ onNotify }
       }
       fetchMedia();
     } catch (err: any) {
-      onNotify('Operation Failed', err.message, 'error');
+      const msg = err.message || 'Operation failed';
+      onNotify('Operation Failed', msg.includes('413') ? 'Payload too large. Please use a direct URL or re-attach the file.' : msg, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -530,7 +544,7 @@ export const AdminMediaManager: React.FC<AdminMediaManagerProps> = ({ onNotify }
                   <div className="mt-3">
                     <label className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer transition-colors shadow-sm">
                       {uploadingFile ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-                      <span>{uploadingFile ? 'Processing...' : 'Browse Local Files'}</span>
+                      <span>{uploadingFile ? 'Uploading to Server...' : 'Browse Local Files'}</span>
                       <input
                         type="file"
                         accept="*/*"
@@ -539,6 +553,56 @@ export const AdminMediaManager: React.FC<AdminMediaManagerProps> = ({ onNotify }
                         className="hidden"
                       />
                     </label>
+                  </div>
+
+                  {/* One-click quick presets */}
+                  <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-center gap-1.5 flex-wrap text-[10px]">
+                    <span className="text-slate-400 font-medium">Quick Presets:</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormTitle('Cloud Architecture Demo 4K');
+                        setFormDescription('High-definition cloud microservices and distributed scaling architectural walk-through.');
+                        setFormType('video');
+                        setFormFileUrl('https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4');
+                        setFormThumbnailUrl('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=600&auto=format&fit=crop&q=80');
+                        setFormFileSize('15.8 MB');
+                        setFormDuration('09:56');
+                      }}
+                      className="px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-indigo-100 hover:text-indigo-700 transition-colors"
+                    >
+                      🎥 Sample Video
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormTitle('Q4 Executive Investor Deck');
+                        setFormDescription('Comprehensive corporate presentation covering fiscal milestones, deliverables, and roadmap.');
+                        setFormType('presentation');
+                        setFormFileUrl('https://view.officeapps.live.com/op/view.aspx?src=sample.pptx');
+                        setFormThumbnailUrl('https://images.unsplash.com/photo-1557804506-669a67965ba0?w=600&auto=format&fit=crop&q=80');
+                        setFormFileSize('8.4 MB');
+                        setFormPreviewContent('Slide 1: Q4 Strategy & Vision\nSlide 2: Financial Performance & Market Growth\nSlide 3: Strategic Partnerships & Integrations\nSlide 4: Next Fiscal Year Milestones');
+                      }}
+                      className="px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-indigo-100 hover:text-indigo-700 transition-colors"
+                    >
+                      📊 Sample PPT
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormTitle('Financial Valuation Model');
+                        setFormDescription('Comprehensive Excel financial workbook with dynamic multi-scenario forecasts.');
+                        setFormType('spreadsheet');
+                        setFormFileUrl('https://example.com/data/model.xlsx');
+                        setFormThumbnailUrl('https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&auto=format&fit=crop&q=80');
+                        setFormFileSize('3.2 MB');
+                        setFormPreviewContent('SHEET 1: General Summary\nColumns: ID | Item Name | Category | Units | Unit Cost | Total Revenue | Status\nFormulas: SUM, AVERAGE, VLOOKUP, INDEX/MATCH');
+                      }}
+                      className="px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-indigo-100 hover:text-indigo-700 transition-colors"
+                    >
+                      📈 Sample Excel
+                    </button>
                   </div>
                 </div>
               )}

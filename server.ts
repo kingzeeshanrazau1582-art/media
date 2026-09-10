@@ -7,9 +7,28 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  // Middleware for parsing JSON and urlencoded requests with increased limits for uploads
-  app.use(express.json({ limit: '50mb' }));
-  app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+  // Ensure uploads directory exists for persistent media files
+  const uploadsDir = path.join(process.cwd(), 'uploads');
+  try {
+    const fs = await import('fs');
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+  } catch (err) {
+    console.warn('Could not initialize uploads directory:', err);
+  }
+
+  // Middleware for parsing JSON and urlencoded requests with generous limits for large media uploads
+  app.use(express.json({ limit: '250mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '250mb' }));
+
+  // Serve persistent uploads directory statically with caching and byte-range streaming for videos
+  app.use('/uploads', express.static(uploadsDir, {
+    maxAge: '1d',
+    setHeaders: (res, filePath) => {
+      res.setHeader('Accept-Ranges', 'bytes');
+    }
+  }));
 
   // Basic request logger in dev
   if (process.env.NODE_ENV !== 'production') {

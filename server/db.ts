@@ -660,6 +660,21 @@ class Database {
     );
   }
 
+  public clearLoginActivities(): void {
+    this.data.loginActivities = [];
+    this.saveData(this.data);
+  }
+
+  public deleteLoginActivity(id: string): boolean {
+    const idx = this.data.loginActivities.findIndex(l => l.id === id);
+    if (idx !== -1) {
+      this.data.loginActivities.splice(idx, 1);
+      this.saveData(this.data);
+      return true;
+    }
+    return false;
+  }
+
   // --- ADMIN SETTINGS ---
   public getAdminSettings(): AdminSettings {
     return this.data.adminSettings;
